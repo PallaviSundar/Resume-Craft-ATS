@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0b5fff"/>
+  <title>Mobile Resume Builder (PWA)</title>
+
+  <!-- Simple styling: mobile-first, responsive and print-friendly -->
+  <style>
+    :root{
+      --max-width: 900px;
+      --accent: #0b5fff;
+      --text: #111;
+      --muted: #444;
+      --pad: 16px;
+      --radius: 10px;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      color:var(--text);
+      background: #f6f8ff;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: calc(var(--pad)) calc(var(--pad));
+      box-sizing: border-box;
+    }
+
+    header.main {
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      padding: 10px 0;
+    }
+    header.main h1{
+      margin:0;
+      font-size: clamp(18px, 4.5vw, 22px);
+      color:var(--accent);
+      line-height:1;
+    }
+    header.main p { margin:0; color:var(--muted); font-size: 13px; }
+
+    /* Form Card */
+    .card {
+      background:white;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(12,30,80,0.06);
+      margin-bottom: 88px; /* space for sticky footer */
+    }
+
+    label { font-weight: 600; font-size: 13px; display:block; margin-bottom:6px; color: #222; }
+    input[type="text"],
+    input[type="email"],
+    input[type="url"],
+    textarea {
+      width:100%;
+      padding: 12px;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 12px;
+      min-height: 44px;
+    }
+    textarea { resize: vertical; min-height: 64px; }
+
+    .two-col {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width:600px){ .two-col { grid-template-columns: 1fr; } }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      display:inline-block;
+      background: var(--accent);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 15px;
+      cursor:pointer;
+      width:100%;
+      box-shadow: 0 6px 14px rgba(11,95,255,0.14);
+    }
+
+    .muted-btn {
+      background: #fff;
+      border: 1px solid #ddd;
+      color:var(--text);
+      box-shadow:none;
+    }
+
+    .inline-actions {
+      display:flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    /* Section title and resume preview area */
+    .section-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 18px;
+      margin-bottom: 6px; /* ONE-LINE spacing requested */
+      font-size: 18px;
+      color: var(--muted);
+      letter-spacing: 0.6px;
+    }
+
+    /* Sticky bottom area for generate/download */
+    .sticky-footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display:flex;
+      justify-content:center;
+      padding: 10px;
+      background: linear-gradient(0deg, rgba(246,248,255,0.9), rgba(246,248,255,0.5));
+      box-shadow: 0 -6px 20px rgba(12,30,80,0.06);
+    }
+    .sticky-inner { width: 100%; max-width: var(--max-width); padding: 0 calc(var(--pad)); box-sizing: border-box; }
+
+    /* Resume preview styling (print-friendly) */
+    #resume {
+      display:none;
+      background: #fff;
+      border-radius: 8px;
+      padding: 18px;
+      color:var(--text);
+      line-height:1.35;
+    }
+    #resume h2 { text-align:center; margin: 4px 0 8px; font-size: 20px; }
+    .contact-info { text-align:center; font-size: 13px; color:var(--muted); margin-bottom: 8px; }
+    .resume-hr { border: 0; border-top: 1px solid #222; margin: 12px 0; }
+
+    .entry { margin-bottom: 10px; page-break-inside: avoid; }
+    .duration { float: right; font-weight: 500; font-size: 13px; color:var(--muted); }
+    .clearfix::after { content:""; display:table; clear:both; }
+
+    ul { margin:6px 0 12px 18px; }
+
+    /* Small helper buttons */
+    .sm { font-size: 13px; padding:8px 10px; border-radius:8px; width:auto; }
+
+    /* Print styles */
+    @media print {
+      body { background: white; margin: 0; }
+      .card, .sticky-footer { display:none !important; }
+      #resume { display:block !important; width:100%; margin:0; padding: 12mm; box-sizing:border-box; }
+      h2 { font-size: 22px; }
+      .contact-info { font-size: 12px; }
+      .section-title { font-size: 14px; margin-top: 10px; margin-bottom: 4px; }
+      .resume-hr { margin: 10px 0; }
+      /* ensure entries don't break badly */
+      .entry, .section-title, .contact-info, .clearfix, ul, p { break-inside: avoid; page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <header class="main">
+      <div style="flex:1">
+        <h1>Resume Builder</h1>
+        <p class="small">Mobile-first | Touch friendly | Export PDF</p>
+      </div>
+      <div style="width:72px; text-align:right;">
+        <button id="clearBtn" class="btn muted-btn sm" title="Clear saved data">Clear</button>
+      </div>
+    </header>
+
+    <main class="card" role="main">
+      <form id="resumeForm" onsubmit="return false;">
+        <!-- Basic info -->
+        <div class="section-title">Basic Information</div>
+
+        <label for="name">Full Name</label>
+        <input id="name" type="text" autocomplete="name" autocapitalize="words" required />
+
+        <label for="address">Address</label>
+        <input id="address" type="text" autocomplete="street-address" autocapitalize="words" />
+
+        <div class="two-col">
+          <div>
+            <label for="email">Email</label>
+            <input id="email" type="email" autocomplete="email" />
+          </div>
+          <div>
+            <label for="phone">Phone (optional)</label>
+            <input id="phone" type="text" inputmode="tel" />
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <label for="linkedin">LinkedIn</label>
+            <input id="linkedin" type="url" placeholder="https://linkedin.com/in/you" />
+          </div>
+          <div>
+            <label for="github">GitHub</label>
+            <input id="github" type="url" placeholder="https://github.com/you" />
+          </div>
+        </div>
+
+        <hr style="border: none; border-top:1px solid #eee; margin: 10px 0 14px;">
+
+        <!-- Profile -->
+        <div class="section-title">Profile</div>
+        <label for="summary" class="small">Short summary (2–4 lines)</label>
+        <textarea id="summary" rows="3"></textarea>
+
+        <hr style="border: none; border-top:1px solid #eee; margin: 10px 0 14px;">
+
+        <!-- Education -->
+        <div class="section-title">Education</div>
+        <div id="educationSection">
+          <div class="entry edu-row">
+            <label class="small">Degree & Institution</label>
+            <input class="eduTitle" type="text" placeholder="B.E. — Example University" />
+            <div class="two-col">
+              <input class="eduDuration" type="text" placeholder="2018 – 2022" />
+              <input class="eduScore" type="text" placeholder="Grade / GPA (optional)" />
+            </div>
+            <textarea class="eduDesc" rows="2" placeholder="Short details (major subjects, honors)"></textarea>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button type="button" class="btn muted-btn" onclick="addEducation()">+ Add Education</button>
+        </div>
+
+        <hr style="border: none; border-top:1px solid #eee; margin: 10px 0 14px;">
+
+        <!-- Experience -->
+        <div class="section-title">Work Experience</div>
+        <div id="experienceSection">
+          <div class="entry exp-row">
+            <label class="small">Position & Company</label>
+            <input class="expTitle" type="text" placeholder="Software Intern — Example Co." />
+            <div class="two-col">
+              <input class="expDuration" type="text" placeholder="Feb 2023 – Jun 2023" />
+              <input class="expLocation" type="text" placeholder="City, Country (optional)" />
+            </div>
+            <textarea class="expDesc" rows="3" placeholder="Describe with • or - as bullets"></textarea>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button type="button" class="btn muted-btn" onclick="addExperience()">+ Add Experience</button>
+        </div>
+
+        <hr style="border: none; border-top:1px solid #eee; margin: 10px 0 14px;">
+
+        <!-- Projects -->
+        <div class="section-title">Projects</div>
+        <div id="projectSection">
+          <div class="entry proj-row">
+            <label class="small">Project Title</label>
+            <input class="projTitle" type="text" placeholder="Smart Home Energy Forecasting" />
+            <div class="two-col">
+              <input class="projDuration" type="text" placeholder="Jan 2024 – Mar 2024" />
+              <input class="projTech" type="text" placeholder="Key tech (optional)" />
+            </div>
+            <textarea class="projDesc" rows="3" placeholder="Describe your project with bullets"></textarea>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button type="button" class="btn muted-btn" onclick="addProject()">+ Add Project</button>
+        </div>
+
+        <hr style="border: none; border-top:1px solid #eee; margin: 10px 0 14px;">
+
+        <!-- Skills & Certifications -->
+        <div class="section-title">Skills</div>
+        <label class="small">Comma separated or newline</label>
+        <textarea id="skills" rows="2" placeholder="Python, TensorFlow, SQL"></textarea>
+
+        <div class="section-title">Certifications</div>
+        <label class="small">List certifications</label>
+        <textarea id="certifications" rows="2" placeholder="AWS Cloud Practitioner, Coursera - ML"></textarea>
+
+        <hr style="border: none; border-top:1px solid #eee; margin: 10px 0 14px;">
+
+        <!-- Optional -->
+        <div class="section-title">Optional</div>
+        <label class="small">Awards</label>
+        <textarea id="awards" rows="2" placeholder="Award name — Year"></textarea>
+
+        <label class="small">Languages</label>
+        <input id="languages" type="text" placeholder="English, Kannada, Telugu" />
+
+        <!-- Actions -->
+        <div style="margin-top:14px; display:grid; gap:10px;">
+          <button id="previewBtn" class="btn">Preview Resume</button>
+          <button id="saveBtn" class="btn muted-btn" type="button">Save Locally</button>
+        </div>
+      </form>
+    </main>
+
+    <!-- Resume preview (print/export target) -->
+    <div id="resume" aria-hidden="true">
+      <h2 id="rName"></h2>
+      <div class="contact-info" id="rContact"></div>
+      <hr class="resume-hr">
+
+      <div class="section-title">Profile</div>
+      <p id="rSummary"></p>
+      <hr class="resume-hr">
+
+      <div class="section-title">Education</div>
+      <div id="rEducation"></div>
+      <hr class="resume-hr">
+
+      <div class="section-title">Work Experience</div>
+      <div id="rExperience"></div>
+      <hr class="resume-hr">
+
+      <div class="section-title">Projects</div>
+      <div id="rProjects"></div>
+      <hr class="resume-hr">
+
+      <div class="section-title">Skills</div>
+      <p id="rSkills"></p>
+      <hr class="resume-hr">
+
+      <div class="section-title">Certifications</div>
+      <p id="rCertifications"></p>
+
+      <div id="optionalSections"></div>
+      <hr class="resume-hr"> <!-- final horizontal line -->
+    </div>
+
+    <!-- Sticky footer with download -->
+    <div class="sticky-footer" role="contentinfo">
+      <div class="sticky-inner">
+        <div style="display:flex; gap:10px;">
+          <button id="downloadBtn" class="btn">Download PDF</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- html2pdf -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+  <script>
+    // --- Utilities ---
+    const $ = id => document.getElementById(id);
+
+    // Save & restore to localStorage
+    function saveForm(){
+      const data = {};
+      const inputs = document.querySelectorAll('#resumeForm input, #resumeForm textarea');
+      inputs.forEach(i => { if(i.id) data[i.id] = i.value; });
+      // For dynamic sections: collect arrays
+      data.edu = Array.from(document.querySelectorAll('.edu-row')).map(row => ({
+        title: row.querySelector('.eduTitle').value,
+        duration: row.querySelector('.eduDuration').value,
+        score: row.querySelector('.eduScore').value,
+        desc: row.querySelector('.eduDesc').value
+      }));
+      data.exp = Array.from(document.querySelectorAll('.exp-row')).map(row => ({
+        title: row.querySelector('.expTitle').value,
+        duration: row.querySelector('.expDuration').value,
+        location: row.querySelector('.expLocation').value,
+        desc: row.querySelector('.expDesc').value
+      }));
+      data.proj = Array.from(document.querySelectorAll('.proj-row')).map(row => ({
+        title: row.querySelector('.projTitle').value,
+        duration: row.querySelector('.projDuration').value,
+        tech: row.querySelector('.projTech').value,
+        desc: row.querySelector('.projDesc').value
+      }));
+      localStorage.setItem('resume_builder_v1', JSON.stringify(data));
+      alert('Saved locally (auto-saves on changes too).');
+    }
+
+    function loadForm(){
+      const raw = localStorage.getItem('resume_builder_v1');
+      if(!raw) return;
+      const data = JSON.parse(raw);
+      // populate simple fields
+      ['name','address','email','phone','linkedin','github','summary','skills','certifications','awards','languages'].forEach(k=>{
+        if(data[k]) {
+          const el = document.getElementById(k);
+          if(el) el.value = data[k];
+        }
+      });
+      // dynamic sections
+      // clear existing extras (keep the first row)
+      function populateRows(sectionSel, templateAddFn, dataArr){
+        const container = document.querySelector(sectionSel);
+        if(!dataArr || !Array.isArray(dataArr)) return;
+        // remove existing rows
+        container.innerHTML = '';
+        dataArr.forEach(obj => {
+          templateAddFn(obj);
+        });
+      }
+      populateRows('#educationSection', addEducation, data.edu);
+      populateRows('#experienceSection', addExperience, data.exp);
+      populateRows('#projectSection', addProject, data.proj);
+    }
+
+    // Auto-save on change
+    document.querySelectorAll('#resumeForm input, #resumeForm textarea').forEach(el=>{
+      el.addEventListener('change', () => {
+        try{ saveForm(); }catch(e){}
+      });
+    });
+
+    // Clear saved data
+    $('clearBtn').addEventListener('click', () => {
+      if(confirm('Clear saved resume data?')) {
+        localStorage.removeItem('resume_builder_v1');
+        location.reload();
+      }
+    });
+
+    // --- Dynamic add row functions ---
+    function addEducation(pref = {}) {
+      const section = document.getElementById('educationSection');
+      const div = document.createElement('div');
+      div.className = 'entry edu-row';
+      div.innerHTML = `
+        <label class="small">Degree & Institution</label>
+        <input class="eduTitle" type="text" placeholder="B.E. — Example University" value="${escapeHtml(pref.title||'')}" />
+        <div class="two-col">
+          <input class="eduDuration" type="text" placeholder="2018 – 2022" value="${escapeHtml(pref.duration||'')}" />
+          <input class="eduScore" type="text" placeholder="Grade / GPA (optional)" value="${escapeHtml(pref.score||'')}" />
+        </div>
+        <textarea class="eduDesc" rows="2" placeholder="Short details (major subjects, honors)">${escapeHtml(pref.desc||'')}</textarea>
+      `;
+      section.appendChild(div);
+    }
+
+    function addExperience(pref = {}) {
+      const section = document.getElementById('experienceSection');
+      const div = document.createElement('div');
+      div.className = 'entry exp-row';
+      div.innerHTML = `
+        <label class="small">Position & Company</label>
+        <input class="expTitle" type="text" placeholder="Software Intern — Example Co." value="${escapeHtml(pref.title||'')}" />
+        <div class="two-col">
+          <input class="expDuration" type="text" placeholder="Feb 2023 – Jun 2023" value="${escapeHtml(pref.duration||'')}" />
+          <input class="expLocation" type="text" placeholder="City, Country (optional)" value="${escapeHtml(pref.location||'')}" />
+        </div>
+        <textarea class="expDesc" rows="3" placeholder="Describe with • or - as bullets">${escapeHtml(pref.desc||'')}</textarea>
+      `;
+      section.appendChild(div);
+    }
+
+    function addProject(pref = {}) {
+      const section = document.getElementById('projectSection');
+      const div = document.createElement('div');
+      div.className = 'entry proj-row';
+      div.innerHTML = `
+        <label class="small">Project Title</label>
+        <input class="projTitle" type="text" placeholder="Smart Home Energy Forecasting" value="${escapeHtml(pref.title||'')}" />
+        <div class="two-col">
+          <input class="projDuration" type="text" placeholder="Jan 2024 – Mar 2024" value="${escapeHtml(pref.duration||'')}" />
+          <input class="projTech" type="text" placeholder="Key tech (optional)" value="${escapeHtml(pref.tech||'')}" />
+        </div>
+        <textarea class="projDesc" rows="3" placeholder="Describe your project with bullets">${escapeHtml(pref.desc||'')}</textarea>
+      `;
+      section.appendChild(div);
+    }
+
+    // small html escape for prefilling
+    function escapeHtml(s){ return (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // Build resume preview from form
+    function generateResume() {
+      $('rName').innerText = $('name').value || ' ';
+      const contactParts = [];
+      if($('address').value) contactParts.push($('address').value);
+      if($('phone').value) contactParts.push($('phone').value);
+      if($('email').value) contactParts.push($('email').value);
+      if($('linkedin').value) contactParts.push($('linkedin').value);
+      if($('github').value) contactParts.push($('github').value);
+      $('rContact').innerText = contactParts.join(' • ');
+
+      $('rSummary').innerText = $('summary').value || '';
+
+      // Education
+      const rEdu = $('rEducation'); rEdu.innerHTML = '';
+      document.querySelectorAll('.edu-row').forEach(row=>{
+        const title = row.querySelector('.eduTitle').value;
+        const dur = row.querySelector('.eduDuration').value;
+        const score = row.querySelector('.eduScore').value;
+        const desc = row.querySelector('.eduDesc').value;
+        const html = `
+          <div class="entry clearfix">
+            <strong>${escapeHtml(title)}</strong>
+            <span class="duration">${escapeHtml(dur)}</span>
+            <p>${escapeHtml(desc)}${score ? (' — ' + escapeHtml(score)) : ''}</p>
+          </div>`;
+        rEdu.insertAdjacentHTML('beforeend', html);
+      });
+
+      // Experience
+      const rExp = $('rExperience'); rExp.innerHTML = '';
+      document.querySelectorAll('.exp-row').forEach(row=>{
+        const title = row.querySelector('.expTitle').value;
+        const dur = row.querySelector('.expDuration').value;
+        const loc = row.querySelector('.expLocation').value;
+        const desc = row.querySelector('.expDesc').value;
+        const bullets = (desc || '').split(/[\n•-]+/).map(s=>s.trim()).filter(Boolean);
+        const ul = bullets.length ? `<ul>${bullets.map(b=>`<li>${escapeHtml(b)}</li>`).join('')}</ul>` : `<p>${escapeHtml(desc)}</p>`;
+        const html = `
+          <div class="entry clearfix">
+            <strong>${escapeHtml(title)}</strong>
+            <span class="duration">${escapeHtml(dur)}</span>
+            ${ul}
+          </div>`;
+        rExp.insertAdjacentHTML('beforeend', html);
+      });
+
+      // Projects
+      const rProj = $('rProjects'); rProj.innerHTML = '';
+      document.querySelectorAll('.proj-row').forEach(row=>{
+        const title = row.querySelector('.projTitle').value;
+        const dur = row.querySelector('.projDuration').value;
+        const tech = row.querySelector('.projTech').value;
+        const desc = row.querySelector('.projDesc').value;
+        const bullets = (desc || '').split(/[\n•-]+/).map(s=>s.trim()).filter(Boolean);
+        const ul = bullets.length ? `<ul>${bullets.map(b=>`<li>${escapeHtml(b)}</li>`).join('')}</ul>` : `<p>${escapeHtml(desc)}</p>`;
+        const html = `
+          <div class="entry clearfix">
+            <strong>${escapeHtml(title)}</strong>
+            <span class="duration">${escapeHtml(dur)}</span>
+            ${ul}
+            ${tech ? `<p class="small">Tech: ${escapeHtml(tech)}</p>` : ''}
+          </div>`;
+        rProj.insertAdjacentHTML('beforeend', html);
+      });
+
+      // Skills & Certifications
+      $('rSkills').innerText = $('skills').value || '';
+      $('rCertifications').innerText = $('certifications').value || '';
+
+      // Optional
+      const optional = $('optionalSections'); optional.innerHTML = '';
+      if($('awards').value.trim()){
+        optional.insertAdjacentHTML('beforeend', `<div class="section-title">Awards</div><p>${escapeHtml($('awards').value)}</p><hr class="resume-hr">`);
+      }
+      if($('languages').value.trim()){
+        optional.insertAdjacentHTML('beforeend', `<div class="section-title">Languages</div><p>${escapeHtml($('languages').value)}</p><hr class="resume-hr">`);
+      }
+
+      // show preview area (visible in non-print view too)
+      $('resume').style.display = 'block';
+      // scroll into view for mobile users
+      setTimeout(()=> $('resume').scrollIntoView({behavior:'smooth', block:'center'}), 250);
+    }
+
+    // Download PDF via html2pdf
+    function downloadPDF(){
+      // ensure preview exists
+      generateResume();
+
+      const resumeEl = document.getElementById('resume');
+
+      // hide sticky while generating
+      document.querySelector('.sticky-footer').style.display = 'none';
+
+      const opt = {
+        margin: [12, 12, 12, 12],
+        filename: (document.getElementById('name').value || 'resume') + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // Temporarily add a wrapper to make sure full width and no outer shadows
+      html2pdf().set(opt).from(resumeEl).save().finally(()=>{
+        document.querySelector('.sticky-footer').style.display = '';
+      });
+    }
+
+    // Event bindings
+    $('previewBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      generateResume();
+    });
+    $('downloadBtn').addEventListener('click', (e)=> {
+      e.preventDefault();
+      downloadPDF();
+    });
+    $('saveBtn').addEventListener('click', (e)=>{
+      e.preventDefault();
+      saveForm();
+    });
+
+    // Load saved data initially
+    window.addEventListener('DOMContentLoaded', () => {
+      // Add initial rows if none exist (loadForm will replace them if data present)
+      if(document.querySelectorAll('.edu-row').length === 0) addEducation();
+      if(document.querySelectorAll('.exp-row').length === 0) addExperience();
+      if(document.querySelectorAll('.proj-row').length === 0) addProject();
+
+      loadForm();
+    });
+
+    // OPTIONAL: register a trivial service worker for PWA offline caching (works if you serve via HTTPS or localhost)
+    if('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw-resume-builder.js').catch(()=>{/* ignore errors for local file */});
+    }
+
+  </script>
+
+  <!-- NOTE: If you want "Add to Home screen" PWA behavior, create a simple manifest.json
+       and host the file. Example manifest:
+       {
+         "name":"Resume Builder",
+         "short_name":"Resume",
+         "start_url": ".",
+         "display":"standalone",
+         "background_color":"#f6f8ff",
+         "theme_color":"#0b5fff",
+         "icons":[ { "src":"icon-192.png", "sizes":"192x192", "type":"image/png" } ]
+       }
+       And serve a small service worker at /sw-resume-builder.js for offline caching.
+  -->
+
+</body>
+</html>
