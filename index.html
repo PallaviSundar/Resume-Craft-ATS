@@ -389,8 +389,8 @@
         tech: row.querySelector('.projTech').value,
         desc: row.querySelector('.projDesc').value
       }));
-      localStorage.setItem('resume_builder_v1', JSON.stringify(data));
-      alert('Saved locally (auto-saves on changes too).');
+      localStorage.setItem('resume_builder_v1',JSON.stringify(data));
+      showSavedStatus();
     }
 
     function loadForm(){
@@ -644,5 +644,6 @@
 </body>
 
 </html>
+
 
 
