@@ -490,15 +490,15 @@
     // Build resume preview from form
     function generateResume() {
     $('rName').innerText = $('name').value || ' ';
-    const contactParts = [];
+const contactParts = [];
 
-    if ($('address').value) contactParts.push(escapeHtml($('address').value));
-    if($('phone').value) contactParts.push($('phone').value);
-    if($('email').value) contactParts.push($('email').value);
-    if ($('linkedin').value) contactParts.push(`<a href="${escapeHtml($('linkedin').value)}" target="_blank">LinkedIn</a>`);
-    if ($('github').value) contactParts.push(`<a href="${escapeHtml($('github').value)}" target="_blank">GitHub</a>`);
+if ($('address').value) contactParts.push(escapeHtml($('address').value));
+if($('phone').value) contactParts.push($('phone').value);
+if($('email').value) contactParts.push($('email').value);
+if ($('linkedin').value) contactParts.push(`<a href="${escapeHtml($('linkedin').value)}" target="_blank">LinkedIn</a>`);
+if ($('github').value) contactParts.push(`<a href="${escapeHtml($('github').value)}" target="_blank">GitHub</a>`);
 
-$('rContact').innerHTML = contactParts.join(' • '); 
+$('rContact').innerHTML = contactParts.join(' • ');
 
       $('rSummary').innerText = $('summary').value || '';
 
@@ -646,6 +646,7 @@ $('rContact').innerHTML = contactParts.join(' • ');
 </body>
 
 </html>
+
 
 
 
